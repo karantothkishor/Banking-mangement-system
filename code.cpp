@@ -1,416 +1,398 @@
-
+//Banking Record System , C++ Project by KARANTOTH KISHOR. 
 #include <iostream>
-#include <fstream>
-#include <cstring>
-#include <cstdio>
-#include <stdio.h>
-#ifdef _WIN32
-#include <Windows.h>
-#else
-#include <unistd.h>
-#endif
 
+#include <fstream>
+
+#include <cctype>
+
+#include <iomanip>
+
+#include <string>
 using namespace std;
 
-class bank_acc
-{
-public:
-    long acc_num;
-    string fname, lname;
-    float balance = 0;
-    float amount;
-    float depo;
-    long mobile_num;
-    int pin;
-    static long next_acc_num;
+//---------------------------------------------------------------------------------------------------//
 
-    create_acc();
-    display_acc_details();
-    deposit_money();
-    withdraw_money();
-    modify_acc_details();
-    delete_acc();
-    friend ofstream &operator<<(ofstream &ofs, bank_acc &account);
-    friend ifstream &operator>>(ifstream &ifs, bank_acc &account);
-    friend ostream &operator<<(ostream &os, bank_acc &account);
+const int maxName = 50;
+const int maxMoney = 7;
+const int maxNumber = 12;
+const int typeSize = 4;
+const string sep = " |";
+const int totalLen = maxName + maxNumber + typeSize + maxMoney + sep.size() * 4;
+const string sepLine = sep + string(totalLen - 1, '=') + '|';
+
+class Bank {
+    private:
+        unsigned long long account_number;
+		char holder_name[51];
+		int deposit;
+		char type;
+    public:
+
+        void System_clear();
+		void Get_Data();
+		void Write_Data();
+		void deposit_withdraw(int n, int option);
+		void Display_Invidual_Records(unsigned long long n);
+		void report() const;
+		void Show_account() const; //TO DISPLAY ACCOUNT DETAILS
+		void dep(int); //TO ADD IN DEPOSIT     
+		void draw(int x); //TO SUBTRACT FROM DEPOSIT
+		unsigned long long retacno() const; //function to return account number
+		int retdeposit() const; //function to return balance amount
+		char rettype() const; //TO WITHDRAW FROM DEPOSIT			
+		void Modification_data();
 };
-long bank_acc ::next_acc_num = 0;
-bank_acc ::create_acc()
-{
-    int pin_check;
-    cout << "Enter your first name : ";
-    cin >> fname;
-    cout << endl;
-    cout << "Enter your last name : ";
-    cin >> lname;
-    cout << endl;
-    cout << "Enter your mobile number : ";
-    cin >> mobile_num;
-    cout << endl;
-    fflush(stdin);
-set_pin:
-    cout << "Set a 4 digit pin as security pin(note : all values should be integers) : ";
-    cin >> pin;
-    cout << endl;
-    cout << "Re-enter and Confirm pin : ";
-    cin >> pin_check;
-    cout << endl;
 
-    if (pin != pin_check)
-    {
-        cout << "Both pins did'nt match. Try again " << endl;
-        goto set_pin;
+void Bank::Get_Data() {
+    cout << "\n\n===========CREATE BANK ACCOUNT===========\n\n";
+    cout << "\nEnter the Account Number:";
+	cin >> account_number;
+	while ((int)to_string(account_number).size() != 12)  // Restrict account number to be of 12 digits
+	{
+		cout << "The account number has to be of 12 digits. Please try again.\n";
+		cin.clear();    // Chances of unwanted newline in the buffer
+		fflush(stdin);
+		cin >> account_number;
+	}
+    cout << "\n\nEnter Account Holder Name: ";
+    cin.clear();
+	fflush(stdin);
+    cin.getline(holder_name, 51);
+    cout << "\nWhich type of Account \n[S for Saving Account] (or)[C for Current Account]: ";
+	cin.clear();
+	fflush(stdin);
+    cin >> type;
+    type = toupper(type);
+    while (type != 'S' && type != 'C') {
+        cout << "Please enter either S or C to avoid data corruption: ";
+		cin.clear();
+		fflush(stdin);
+        cin >> type;
+        type = toupper(type);
     }
-deposit:
-    cout << "Enter money to deposit : ";
-    cin >> depo;
-    cout << endl;
-    if (depo < 500)
-    {
-        cout << "Minimum Balance should be 500. Deposit amount more than 500. " << endl;
-        goto deposit;
+    if (type == 'S') {
+        cout << "\nEnter the Initial Amount for Saving Account [Minimum 500/-]: ";
+        cin >> deposit;
+		while (deposit >= 1000000)
+		{
+			cout << "Maximum money is 1000000/-\nPlease try again: ";
+			cin >> deposit;
+		}
+        cout << "\n\nAccount has been Created Sucessfully.";
+    } else if (type == 'C') {
+        cout << "\nEnter the Initial Amount for Current Account [Minimum 1000/-]: ";
+        cin >> deposit;
+		while (deposit >= 1000000)
+		{
+			cout << "Maximum money is 1000000/-\nPlease try again: ";
+			cin >> deposit;
+		}
+        cout << "\n\nAccount has been Created Sucessfully.";
     }
-    else
-        balance += depo;
-    acc_num = ++next_acc_num;
+}
 
-    // system("cls");
-    // Sleep(2000);
-    cout << "\t\t\t\t\tCONGRATULATIONS!!! \n\n\t YOUR ACCOUNT IS SUCCESFULLY CREATED....\n\n"
-         << endl;
+void Bank::Write_Data() {
+    ofstream outFile;
+    outFile.open("account.dat", ios::binary | ios::app);
+    Get_Data();
+    outFile.write((char * ) this, sizeof( * this));
+    outFile.close();
+}
 
-    cout << "\tYour account details : " << endl;
+void Bank::Modification_data() {
+    cout << "\nAccount No: " << account_number;
+    cout << "\nModify Account Holder Name: ";
+    cin.clear();
+	fflush(stdin);
+    cin.getline(holder_name, 51);
+    cout << "\nModify Type of Account : ";
+	cin.clear();
+	fflush(stdin);
+    cin >> type;
+    type = toupper(type);
+    cout << "\nModify Total Balance Amount : ";
+    cin >> deposit;
+	while (deposit >= 1000000)
+	{
+			cout << "Maximum money is 1000000/-\nPlease try again: ";
+			cin >> deposit;
+	}
 }
-ofstream &operator<<(ofstream &ofs, bank_acc &account)
-{
-    ofs << account.acc_num << endl;
-    ofs << account.fname << endl;
-    ofs << account.lname << endl;
-    ofs << account.balance << endl;
-    ofs << account.mobile_num << endl;
-    ofs << account.pin << endl;
-    return ofs;
-}
-ifstream &operator>>(ifstream &ifs, bank_acc &account)
-{
-    ifs >> account.acc_num;
-    ifs >> account.fname;
-    ifs >> account.lname;
-    ifs >> account.balance;
-    ifs >> account.mobile_num;
-    ifs >> account.pin;
-    return ifs;
-}
-ostream &operator<<(ostream &os, bank_acc &account)
-{
-    os << "\n\t \t First Name : " << account.fname << endl;
-    os << "\t \t Last Name : " << account.lname << endl;
-    os << "\t \t Account Number : " << account.acc_num << endl;
-    os << "\t \t Current Balance : " << account.balance << endl;
 
-    // os << "\t \t Mobile Number : " << account.mobile_num << endl;
-    return os;
-}
-void replace_pin(int acc_no, int new_pin)
-{
-    bank_acc Acc;
-    ifstream fin;
-    fin.open("user_data.data");
-    ofstream fout;
-    fout.open("temp.data");
-    while (!fin.eof())
-    {
-        fin >> Acc;
-        cout << Acc << endl;
-        if (Acc.acc_num == acc_no)
-        {
-            Acc.pin = new_pin;
-            fout << Acc << endl;
-        }
-        else
-            fout << Acc << endl;
-    }
-
-    fin.close();
-    fout.close();
-    // char filename[] = "user_data.data";
-    // int res = remove(filename);
-    // cout << res << endl ;
-    // rename("temp.data", "user_data.data");
-}
-void new_user()
-{
-    bank_acc new_acc;
-    int choice;
-    // system("cls");
-    cout << "\n \t \t \t \t \t HELLO....\n"
-         << endl;
-    // Sleep(2000);
-    cout << "\t MENU:\n"
-         << endl;
-    cout << "\t 1.Create New Account" << endl;
-    cout << "\t 2.Exit\n"
-         << endl;
-select:
-    cout << "Enter your choice:";
-    cin >> choice;
-    // system("cls");
-    switch (choice)
-    {
-    case 1:
-    {
-        cout << "Please enter your details to continue :\n"
-             << endl;
-        new_acc.create_acc();
-        ofstream outfile;
-        outfile.open("user_data.data", std::ios_base::app);
-        outfile << new_acc << endl;
-        outfile.close();
-        cout << new_acc << endl;
-        break;
-    }
-    case 2:
-    {
-        exit(0);
-        break;
-    }
-    default:
-    {
-        cout << "\tInvalid option. Select a valid one. \n";
-        goto select;
-    }
-    }
-}
-void existing_user()
-{
-    bank_acc Account;
-    long acc_no;
-retry:
-    cout << "Enter your account number : ";
-    cin >> acc_no;
-    ifstream infile;
-    infile.open("user_data.data");
-    if (!infile)
-    {
-        cout << "Error in Opening! File Not Found!!" << endl;
+void Bank::Display_Invidual_Records(unsigned long long n) {
+    bool flag = false;
+    ifstream inFile;
+    inFile.open("account.dat", ios::binary);
+    if (!inFile) {
+        cout << "\n\nAn Error Occurred. Please try again.";
         return;
     }
-    bool acc_found = false;
-    while (!infile.eof())
-    {
-        infile >> Account;
-        if (Account.acc_num == acc_no)
-        {
-            acc_found = true;
-            break;
+    cout << "\nBALANCE DETAILS\n";
+
+    while (inFile.read((char * ) this, sizeof( * this))) {
+        if (retacno() == n) {
+            Show_account();
+            flag = true;
         }
     }
-    if (acc_found == false)
-    {
-        cout << "No account found. \n Retry";
-        goto retry;
-    }
-    int user_pin;
-    cout << "Enter your pin to continue : ";
-    cin >> user_pin;
-    if (user_pin == Account.pin)
-    {
-        cout << "Welcome back";
-        int choice;
-    user:
-        // system("cls");
-        // Sleep(2000);
-        cout << "\t MENU:\n"
-             << endl;
-        cout << "\t 1. Balance Enquiry" << endl;
-        cout << "\t 2. Deposit money" << endl;
-        cout << "\t 3. Withdraw money" << endl;
-        cout << "\t 4. Update your details" << endl;
-        cout << "\t 5. Update your pin" << endl;
-        cout << "\t 6. Exit\n"
-             << endl;
-    select:
-        cout << "Enter your choice: ";
-        cin >> choice;
-        switch (choice)
-        {
-        case 1:
-        {
-            cout << "Your account balance is : " << Account.balance << endl;
-            goto user;
-            break;
-        }
-        case 2:
-        {
-            long amount = 0;
-            cout << "Enter amount to deposit : ";
-            cin >> amount;
-            Account.balance += amount;
-            cout << "Your current balance is : " << Account.balance << endl;
-            goto user;
-            break;
-        }
-        case 3:
-        {
-            long amount = 0;
-            cout << "Enter amount to withdraw : ";
-            cin >> amount;
-            Account.balance -= amount;
-            cout << "Your current balance is : " << Account.balance << endl;
-            goto user;
-            break;
-        }
-        case 4:
-        {
-            // system("cls");
-            // Sleep(2000);
-            cout << "\t What you want to update :\n"
-                 << endl;
-            cout << "\t 1. First Name" << endl;
-            cout << "\t 2. Last Name" << endl;
-            cout << "\t 3. Mobile Number " << endl;
-            cout << "\t 4. Exit\n"
-                 << endl;
-        update:
-            cout << "Enter your choice: ";
-            cin >> choice;
-            switch (choice)
-            {
-            case 1:
-            {
-                cout << "Enter your new first name : " << endl;
-                string new_fname;
-                cin >> new_fname;
-                Account.fname = new_fname;
-                cout << "Your details updated successfully." << endl;
-                goto update;
-                break;
-            }
-            case 2:
-            {
-                cout << "Enter your new last name : " << endl;
-                string new_lname;
-                cin >> new_lname;
-                Account.lname = new_lname;
-                cout << "Your details updated successfully." << endl;
-                goto update;
-                break;
-            }
-            case 3:
-            {
-                cout << "Enter your new mobile number : " << endl;
-                long new_mobilenumber;
-                cin >> new_mobilenumber;
-                Account.mobile_num = new_mobilenumber;
-                cout << "Your details updated successfully." << endl;
-                goto update;
-                break;
-            }
-            case 4:
-            {
-                exit(0);
-                break;
-            }
-            default:
-            {
-                cout << "\tInvalid option. Select a valid one. \n";
-                goto update;
-            }
-            }
-        }
-        case 5:
-        {
-            char c;
-            int old_pin;
-        yesorno:
-            cout << "Are you sure to change your pin? \n press y for yes, n for no\n (y/n) : ";
-            cin >> c;
-            if (c == 'y' || c == 'Y')
-            {
-            pin:
-                cout << "Enter your old pin : ";
-                cin >> old_pin;
-                if (old_pin == Account.pin)
-                {
-                    int new_pin;
-                    cout << "Enter new pin : ";
-                    cin >> new_pin;
-                    replace_pin(acc_no, new_pin);
-                    cout << "Your pin updated successfully." << endl;
-                    infile.close();
-                    int res = remove("user_data.data");
-                
-                    rename("temp.data", "user_data.data");
-                }
-                else
-                {
-                    cout << "Incorrect pin entered.\nTry again." << endl;
-                    goto pin;
-                }
-            }
-            else if (c == 'n' || c == 'N')
-            {
-                goto user;
-            }
-            else
-            {
-                cout << "Invalid input.\nTry again" << endl;
-                goto yesorno;
-            }
-            break;
-        }
-        case 6:
-        {
-            exit(0);
-            break;
-        }
-        default:
-        {
-            cout << "\tInvalid option. Select a valid one. \n";
-            goto user;
-        }
-        }
-    }
-    // infile.close();
-    // int res = remove("user_data.data");
-    // cout <<  "hi" << res << endl;
-    
+    inFile.close();
+    if (flag == false)
+        cout << "\n\nAccounts Details not Found.";
 }
 
-int main()
-{
-    // system("cls");
-    // Sleep(2000);
-    cout << " \n \t \t \t \t \t WELCOME!!! \n"
-         << endl;
-    // Sleep(2000);
+void Bank::report() const {
+    cout << sep <<
+        setw(maxNumber) << account_number << sep <<
+        setw(maxName) << holder_name << sep <<
+        setw(typeSize) << type << sep <<
+        setw(maxMoney) << deposit << sep << endl << sepLine << endl;
+}
 
-    int choice;
+void Bank::dep(int x) {
+    deposit = deposit + x;
+}
 
-begin:
-    // system("cls");
-    cout << "\t Please select one of the options below :  \n"
-         << endl;
+void Bank::draw(int x) {
+    deposit -= x;
+}
 
-    cout << "\t 1. New User" << endl;
-    cout << "\t 2. Existing User" << endl;
-    cout << "\t 3. Exit out of process" << endl;
-select:
-    cout << "\n\t Enter your choice : ";
-    cin >> choice;
-
-    switch (choice)
-    {
-    case 1:
-        new_user();
-        break;
-    case 2:
-        existing_user();
-        break;
-    case 3:
-        exit(0);
-    default:
-        cout << "\tInvalid option. Select a valid one. \n";
-        goto select;
+void Bank::Show_account() const {
+    cout << "\nAccount No: " << account_number;
+    cout << "\nAccount Holder Name: ";
+    cout << holder_name;
+    if (type == 'S') {
+        cout << "\nType of Account: Saving ";
+    } else {
+        cout << "\nType of Account: Current ";
     }
+    cout << "\nTotal Balance: " << deposit;
+}
+
+unsigned long long Bank::retacno() const{
+    return account_number;
+}
+
+int Bank::retdeposit() const {
+    return deposit;
+}
+
+char Bank::rettype() const {
+    return type;
+}
+
+void Bank::System_clear() {
+    system("cls");
+}
+
+//-------------------------------------------------------------------------------------------------------//
+
+void Delete_Account(unsigned long long);
+void system_clear() {
+    system("cls");
+}
+void Get_All_Data();
+void Deposit_Withdraw(unsigned long long, int);
+void Credit();
+void Account_Modification(unsigned long long);
+int main() {
+    char my_url;
+    char choice;
+    unsigned long long account_number;
+    Bank call;
+    Credit();
+    do {
+        system_clear();
+        cout << "\n===========================";
+        cout << "\n  BANKING RECORD SYSTEM";
+        cout << "\n===========================\n\n";
+        cout << "\n\n01. CREATE NEW ACCOUNT";
+        cout << "\n\n02. MODIFY AN ACCOUNT";
+        cout << "\n\n03. BALANCE ENQUIRY OF ACCOUNT";
+        cout << "\n\n04. DEPOSIT IN ACCOUNT";
+        cout << "\n\n05. WITHDRAW FROM ACCOUNT";
+        cout << "\n\n06. ALL ACCOUNT HOLDER LIST";
+        cout << "\n\n07. CLOSE AN ACCOUNT";
+        cout << "\n\n08. EXIT FROM PROGRAM";
+        cout << "\n\nSELECT THE OPTION: ";
+        cin >> choice;
+        system_clear();
+        switch (choice) {
+        case '1':
+            call.Write_Data();
+            break;
+        case '2':
+            cout << "\n\n\tAccount No: ";
+            cin >> account_number;
+            Account_Modification(account_number);
+            break;
+        case '3':
+            cout << "\n\nAccount No: ";
+            cin >> account_number;
+            call.Display_Invidual_Records(account_number);
+            break;
+        case '4':
+            cout << "\n\nAccount No: ";
+            cin >> account_number;                               
+            Deposit_Withdraw(account_number, 1);
+            break;
+
+        case '5':
+            cout << "\n\nAccount No: ";
+            cin >> account_number;
+            Deposit_Withdraw(account_number, 2);
+            break;
+
+        case '6':
+            Get_All_Data();
+            break;
+
+        case '7':
+            cout << "\n\nAccount No: ";
+            cin >> account_number;
+            Delete_Account(account_number);
+            break;
+
+        case '8':
+            cout << "\n\n\tThanks for using Bank Record System.\n\n\tFor more cool stuff, visit https//github.com/imabhisht";
+            cout << "\n\n\n\n\n\tDo you want to visit my Website [Y/N]: ";
+            cin >> my_url;
+            my_url = toupper(my_url);
+            if (my_url == 'Y') {
+                system("start https://github.com/imabhisht");
+            }
+            break;
+        default:
+            cout << "\a";
+        }
+        cin.clear();
+		fflush(stdin);
+        cin.get();
+        system_clear();
+    } while (choice != '8');
+}
+
+//-------------------------------------------------------------------------------------------------------//
+
+void Get_All_Data() {
+    Bank call;
+    ifstream inFile;
+    inFile.open("account.dat", ios::binary);
+    if (!inFile) {
+        cout << "An Error Occurred. Please try again.";
+        return;
+    }
+    cout << "\n\n\t\tACCOUNT HOLDER LIST\n\n";
+    cout << sepLine << endl << sep <<
+        setw(maxNumber) << "A/C NO." << sep <<
+        setw(maxName) << "NAME" << sep <<
+        setw(typeSize) << "TYPE" << sep <<
+        setw(maxMoney) << "BALANCE" << sep << endl <<
+        sepLine << endl;
+    while (inFile.read((char * ) & call, sizeof(Bank))) {
+        call.report();
+    }
+    inFile.close();
+}
+
+void Deposit_Withdraw(unsigned long long n, int option) {
+    int amt;
+    Bank call;
+    bool found = false;
+    fstream File;
+    File.open("account.dat", ios::binary | ios:: in | ios::out);
+    if (!File) {
+        cout << "An Error Occured. Please try again.";
+        return;
+    }
+    while (!File.eof() && found == false) {
+        File.read((char * ) & call, sizeof(Bank));
+        if (call.retacno() == n) {
+            call.Show_account();
+            if (option == 1) {
+                cout << "\n\n===========DEPOSIT TO ACCOUNT===========";
+                cout << "\n\nEnter the Amount: ";
+                cin >> amt;
+				if (call.retdeposit() + amt >= 1000000)
+				{
+					cout << "Maximum money is 1000000/-\nPlease try again: ";
+					cin >> amt;
+				}
+                call.dep(amt);
+            }
+            if (option == 2) {
+                cout << "\n\n===========WITHDRAW FROM ACCOUNT===========";
+                cout << "\n\nEnter the Amount: ";
+                cin >> amt;
+                int bal = call.retdeposit() - amt;
+                if ((bal < 500 && call.rettype() == 'S') || (bal < 1000 && call.rettype() == 'C'))
+                    cout << "\nInsufficient Balance. Please check your Balance.";
+                else
+                    call.draw(amt);
+            }
+            int pos = (-1) * sizeof(call);
+            File.seekp(pos, ios::cur);
+            File.write((char * ) & call, sizeof(Bank));
+            cout << "\n\nAccount Records Updated Sucessfully.";
+            found = true;
+        }
+    }
+    File.close();
+    if (found == false)
+        cout << "\n\nAccount Records not Found.";
+}
+
+void Delete_Account(unsigned long long n) {
+    Bank call;
+    ifstream inFile;
+    ofstream outFile;
+    inFile.open("account.dat", ios::binary);
+    if (!inFile) {
+        cout << "An Error Occured. Please try again.";
+        return;
+    }
+    outFile.open("account_temp.dat", ios::binary);
+    inFile.seekg(0, ios::beg);
+    while (inFile.read((char * ) & call, sizeof(Bank))) {
+        if (call.retacno() != n) {
+            outFile.write((char * ) & call, sizeof(Bank));
+        }
+    }
+    inFile.close();
+    outFile.close();
+    remove("account.dat");
+    rename("account_temp.dat", "account.dat");
+    cout << "\n\nRecord has been Deleted.";
+}
+
+void Account_Modification(unsigned long long n) {
+    Bank call;
+    bool found = false;
+    fstream File;
+    File.open("account.dat", ios::binary | ios:: in | ios::out);
+    if (!File) {
+        cout << "An Error Occured. Please try again.";
+        return;
+    }
+    while (!File.eof() && found == false) {
+        File.read((char * ) & call, sizeof(Bank));
+        if (call.retacno() == n) {
+            call.Show_account();
+            cout << "\n\n===========MODIFY ACCOUNT===========";
+            cout << "\nNew Details of the Account: " << endl;
+            call.Modification_data();
+            int pos = (-1) * sizeof(Bank);
+            File.seekp(pos, ios::cur);
+            File.write((char * ) & call, sizeof(Bank));
+            cout << "\n\nRecord Updated.";
+            found = true;
+        }
+    }
+    File.close();
+    if (found == false)
+        cout << "\n\n Record Not Found.";
+}
+
+void Credit() {
+    system_clear();
+    cout << "\n\nBanking Record System Project by KARANTOTH KISHOR." << "\nWritten in C++.";
 }
